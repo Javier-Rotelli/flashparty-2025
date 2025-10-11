@@ -16,9 +16,12 @@ namespace TGC.MonoGame.TP.Models
 
         public Matrix World { get; set; }
 
+        public Vector3 Position { get; set; }
+
         public SimpleModel(Effect effect)
         {
             _effect = effect;
+            Position = Vector3.Zero;
             World = Matrix.Identity;
         }
         public SimpleModel(ContentManager content, string modelPath, Effect effect) : this(effect)
@@ -40,7 +43,7 @@ namespace TGC.MonoGame.TP.Models
         }
         public void Update(GameTime gameTime)
         {
-
+            World = Matrix.CreateTranslation(Position);
         }
 
         public void Draw()

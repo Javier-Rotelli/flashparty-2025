@@ -2,6 +2,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TGC.MonoGame.Samples.Cameras;
+using TGC.MonoGame.TP.Models;
 
 namespace TGC.MonoGame.TP;
 
@@ -12,22 +14,25 @@ namespace TGC.MonoGame.TP;
 /// </summary>
 public class TGCGame : Game
 {
-    public const string ContentFolder3D = "Models/";
+    public const string ContentFolder3D = "Models/kenney/";
     public const string ContentFolderEffects = "Effects/";
     public const string ContentFolderMusic = "Music/";
     public const string ContentFolderSounds = "Sounds/";
     public const string ContentFolderSpriteFonts = "SpriteFonts/";
     public const string ContentFolderTextures = "Textures/";
-    
+
     private readonly GraphicsDeviceManager _graphics;
 
     private Effect _effect;
-    private Model _model;
+    private SimpleModel _model;
+    private SimpleModel _model2;
     private Matrix _projection;
-    private float _rotation;
-    private SpriteBatch _spriteBatch;
-    private Matrix _view;
-    private Matrix _world;
+    private Matrix _fixedView;
+
+    private Camera _camera;
+
+    private Camera _freeCamera;
+    private Camera _fixedCamera;
 
     /// <summary>
     ///     Constructor del juego.
@@ -63,12 +68,13 @@ public class TGCGame : Game
         GraphicsDevice.RasterizerState = rasterizerState;
         // Seria hasta aca.
 
-        // Configuramos nuestras matrices de la escena.
-        _world = Matrix.Identity;
-        _view = Matrix.CreateLookAt(Vector3.UnitZ * 150, Vector3.Zero, Vector3.Up);
+        _fixedView = Matrix.CreateLookAt(new Vector3(-1.7f, 120f, 385f), Vector3.Zero, Vector3.Up);
+
         _projection =
             Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 250);
 
+        _freeCamera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, Vector3.UnitZ * 150);
+        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(-1.7f, 120f, 385f), new Vector3(-0f, -0.2f, -1f), Vector3.Up);
         base.Initialize();
     }
 
@@ -79,26 +85,19 @@ public class TGCGame : Game
     /// </summary>
     protected override void LoadContent()
     {
-        // Aca es donde deberiamos cargar todos los contenido necesarios antes de iniciar el juego.
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Cargo el modelo del logo.
-        _model = Content.Load<Model>(ContentFolder3D + "tgc-logo/tgc-logo");
+        // Cargo la textura del modelo.
+        var colormap = Content.Load<Texture2D>(ContentFolder3D + "Textures/colormap");
 
         // Cargo un efecto basico propio declarado en el Content pipeline.
         // En el juego no pueden usar BasicEffect de MG, deben usar siempre efectos propios.
         _effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
 
-        // Asigno el efecto que cargue a cada parte del mesh.
-        // Un modelo puede tener mas de 1 mesh internamente.
-        foreach (var mesh in _model.Meshes)
-        {
-            // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
-            foreach (var meshPart in mesh.MeshParts)
-            {
-                meshPart.Effect = _effect;
-            }
-        }
+        _model = new SimpleModel(Content, ContentFolder3D + "coaster-train-front", _effect);
+        _model2 = new SimpleModel(Content, ContentFolder3D + "coaster-steel-straight", _effect);
+
+        // Asigno la textura cargada al efecto.
+        _effect.Parameters["Colormap"].SetValue(colormap);
 
         base.LoadContent();
     }
@@ -118,12 +117,16 @@ public class TGCGame : Game
             //Salgo del juego.
             Exit();
         }
+        if (Keyboard.GetState().CapsLock)
+        {
+            _camera = _freeCamera;
+        }
+        else
+        {
+            _camera = _fixedCamera;
+        }
 
-        // Basado en el tiempo que paso se va generando una rotacion.
-        _rotation += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-
-        _world = Matrix.CreateRotationY(_rotation);
-
+        _camera.Update(gameTime);
         base.Update(gameTime);
     }
 
@@ -137,15 +140,11 @@ public class TGCGame : Game
         GraphicsDevice.Clear(Color.Black);
 
         // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-        _effect.Parameters["View"].SetValue(_view);
-        _effect.Parameters["Projection"].SetValue(_projection);
-        _effect.Parameters["DiffuseColor"].SetValue(Color.DarkBlue.ToVector3());
+        _effect.Parameters["View"].SetValue(_camera.View);
+        _effect.Parameters["Projection"].SetValue(_camera.Projection);
 
-        foreach (var mesh in _model.Meshes)
-        {
-            _effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * _world);
-            mesh.Draw();
-        }
+        _model.Draw();
+        _model2.Draw();
     }
 
     /// <summary>
