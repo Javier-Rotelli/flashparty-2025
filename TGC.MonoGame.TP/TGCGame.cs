@@ -27,6 +27,7 @@ public class TGCGame : Game
     private Effect _effect;
     private SimpleModel _cart;
     private Rails _rail_straight;
+    private Plane _plane;
     private bool _isFreeCamera = false;
 
     private Camera _freeCamera;
@@ -97,8 +98,21 @@ public class TGCGame : Game
 
         _rail_straight = new Rails(Content, ContentFolder3D + "coaster-steel-straight", _effect);
 
+        _plane = new Plane(GraphicsDevice, 200, 200, 30);
+
         // Asigno la textura cargada al efecto.
-        _effect.Parameters["Colormap"].SetValue(colormap);
+        _effect.Parameters["Colormap"]?.SetValue(colormap);
+
+        // Luz
+        _effect.Parameters["ambientColor"]?.SetValue(Vector3.One);
+        _effect.Parameters["diffuseColor"]?.SetValue(new Vector3(0.1f, 0.1f, 0.6f));
+        _effect.Parameters["specularColor"]?.SetValue(new Vector3(1f, 1f, 1f));
+
+        _effect.Parameters["KAmbient"]?.SetValue(0.1f);
+        _effect.Parameters["KDiffuse"]?.SetValue(1.0f);
+        _effect.Parameters["KSpecular"]?.SetValue(0.8f);
+        _effect.Parameters["shininess"]?.SetValue(64.0f);
+
 
         base.LoadContent();
     }
@@ -198,9 +212,15 @@ public class TGCGame : Game
         _effect.Parameters["View"].SetValue(camera.View);
         _effect.Parameters["Projection"].SetValue(camera.Projection);
 
+        _effect.Parameters["lightPosition"]?.SetValue(new Vector3(467, 1000, 883));
+        _effect.Parameters["eyePosition"]?.SetValue(camera.Position);
+        _effect.Parameters["Time"]?.SetValue((float)gameTime.TotalGameTime.TotalSeconds);
+
         _cart.Draw();
 
         _rail_straight.Draw();
+
+        _plane.Draw(_effect);
     }
 
     /// <summary>

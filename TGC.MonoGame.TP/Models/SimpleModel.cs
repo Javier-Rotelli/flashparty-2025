@@ -51,9 +51,12 @@ namespace TGC.MonoGame.TP.Models
         }
         public void Draw(Matrix world)
         {
+            _effect.CurrentTechnique = _effect.Techniques["BlinnPhong"];
             foreach (var mesh in _model.Meshes)
             {
-                _effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
+                var worldMatrix = mesh.ParentBone.Transform * world;
+                _effect.Parameters["World"].SetValue(worldMatrix);
+                _effect.Parameters["InverseTransposeWorld"].SetValue(Matrix.Transpose(Matrix.Invert(worldMatrix)));
                 mesh.Draw();
             }
         }
