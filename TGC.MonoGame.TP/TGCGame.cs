@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TGC.MonoGame.Samples.Cameras;
+using TGC.MonoGame.Samples.Geometries;
 using TGC.MonoGame.TP.Models;
 
 namespace TGC.MonoGame.TP;
@@ -24,15 +25,16 @@ public class TGCGame : Game
     private readonly GraphicsDeviceManager _graphics;
 
     private Effect _effect;
-    private SimpleModel _model;
-    private SimpleModel _model2;
-    private Matrix _projection;
-    private Matrix _fixedView;
-
-    private Camera _camera;
+    private SimpleModel _cart;
+    private Rails _rail_straight;
+    private bool _isFreeCamera = false;
 
     private Camera _freeCamera;
     private Camera _fixedCamera;
+
+    private Origin _origin;
+
+    private Vector3 _cart_offset = new Vector3(0, 30, 110);
 
     /// <summary>
     ///     Constructor del juego.
@@ -68,13 +70,9 @@ public class TGCGame : Game
         GraphicsDevice.RasterizerState = rasterizerState;
         // Seria hasta aca.
 
-        _fixedView = Matrix.CreateLookAt(new Vector3(-1.7f, 120f, 385f), Vector3.Zero, Vector3.Up);
-
-        _projection =
-            Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 250);
 
         _freeCamera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, Vector3.UnitZ * 150);
-        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(-1.7f, 120f, 385f), new Vector3(-0f, -0.2f, -1f), Vector3.Up);
+        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0f, 125f, -100f), new Vector3(0f, -0.05f, 1f), Vector3.Up);
         base.Initialize();
     }
 
@@ -85,7 +83,7 @@ public class TGCGame : Game
     /// </summary>
     protected override void LoadContent()
     {
-
+        _origin = new Origin(GraphicsDevice);
         // Cargo la textura del modelo.
         var colormap = Content.Load<Texture2D>(ContentFolder3D + "Textures/colormap");
 
@@ -93,8 +91,11 @@ public class TGCGame : Game
         // En el juego no pueden usar BasicEffect de MG, deben usar siempre efectos propios.
         _effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
 
-        _model = new SimpleModel(Content, ContentFolder3D + "coaster-train-front", _effect);
-        _model2 = new SimpleModel(Content, ContentFolder3D + "coaster-steel-straight", _effect);
+        _cart = new SimpleModel(Content, ContentFolder3D + "coaster-train-front", _effect);
+        _cart.Scale = new Vector3(1, 1, -1);
+        _cart.Position = _cart_offset;
+
+        _rail_straight = new Rails(Content, ContentFolder3D + "coaster-steel-straight", _effect);
 
         // Asigno la textura cargada al efecto.
         _effect.Parameters["Colormap"].SetValue(colormap);
@@ -102,6 +103,55 @@ public class TGCGame : Game
         base.LoadContent();
     }
 
+
+    private KeyboardState _previousKeyboardState;
+
+    private bool OnKeyUp(Keys key)
+    {
+        return !Keyboard.GetState().IsKeyDown(key) && _previousKeyboardState.IsKeyDown(key);
+    }
+
+
+    protected void UpdateModelPosition(GameTime gameTime)
+    {
+        if (OnKeyUp(Keys.W))
+        {
+            _cart_offset.Z += 10;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.S))
+        {
+            _cart_offset.Z -= 10;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.A))
+        {
+            _cart_offset.X -= 1;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.D))
+        {
+            _cart_offset.X += 1;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.R))
+        {
+            _cart_offset = new Vector3(0, 30, 110);
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.F))
+        {
+            _cart_offset.Y += 1;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        if (OnKeyUp(Keys.V))
+        {
+            _cart_offset.Y -= 1;
+            System.Console.WriteLine("Offset: " + _cart_offset);
+        }
+        _cart.Position = _cart_offset;
+        _cart.Update(gameTime);
+    }
     /// <summary>
     ///     Se llama en cada frame.
     ///     Se debe escribir toda la logica de computo del modelo, asi como tambien verificar entradas del usuario y reacciones
@@ -110,24 +160,27 @@ public class TGCGame : Game
     protected override void Update(GameTime gameTime)
     {
         // Aca deberiamos poner toda la logica de actualizacion del juego.
-
+        KeyboardState state = Keyboard.GetState();
         // Capturar Input teclado
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (state.IsKeyDown(Keys.Escape))
         {
             //Salgo del juego.
             Exit();
         }
-        if (Keyboard.GetState().CapsLock)
+        if (OnKeyUp(Keys.P))
         {
-            _camera = _freeCamera;
-        }
-        else
-        {
-            _camera = _fixedCamera;
+            _isFreeCamera = !_isFreeCamera;
         }
 
-        _camera.Update(gameTime);
+        //UpdateModelPosition(gameTime);
+        _freeCamera.Update(gameTime);
+
+        _rail_straight.Update(gameTime, 1000f);
+
+        _cart.Update(gameTime);
+
         base.Update(gameTime);
+        _previousKeyboardState = state;
     }
 
     /// <summary>
@@ -138,13 +191,16 @@ public class TGCGame : Game
     {
         // Aca deberiamos poner toda la logia de renderizado del juego.
         GraphicsDevice.Clear(Color.Black);
+        var camera = _isFreeCamera ? _freeCamera : _fixedCamera;
 
+        _origin.Draw(camera.View, camera.Projection);
         // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-        _effect.Parameters["View"].SetValue(_camera.View);
-        _effect.Parameters["Projection"].SetValue(_camera.Projection);
+        _effect.Parameters["View"].SetValue(camera.View);
+        _effect.Parameters["Projection"].SetValue(camera.Projection);
 
-        _model.Draw();
-        _model2.Draw();
+        _cart.Draw();
+
+        _rail_straight.Draw();
     }
 
     /// <summary>

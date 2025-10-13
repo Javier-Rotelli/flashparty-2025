@@ -61,7 +61,7 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
 	float4 textureColor = tex2D(ColormapSampler, input.TexCoord);
-	return textureColor;
+	return lerp(textureColor, float4(DiffuseColor, 1), 0.0);
 }
 
 technique BasicColorDrawing{

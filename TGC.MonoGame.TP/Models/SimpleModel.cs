@@ -18,6 +18,10 @@ namespace TGC.MonoGame.TP.Models
 
         public Vector3 Position { get; set; }
 
+        public Vector3 Scale { get; set; } = Vector3.One;
+
+        public Quaternion Rotation { get; set; } = Quaternion.Identity;
+
         public SimpleModel(Effect effect)
         {
             _effect = effect;
@@ -43,16 +47,20 @@ namespace TGC.MonoGame.TP.Models
         }
         public void Update(GameTime gameTime)
         {
-            World = Matrix.CreateTranslation(Position);
+            World = Matrix.CreateFromQuaternion(Rotation) * Matrix.CreateScale(Scale) * Matrix.CreateTranslation(Position);
+        }
+        public void Draw(Matrix world)
+        {
+            foreach (var mesh in _model.Meshes)
+            {
+                _effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
+                mesh.Draw();
+            }
         }
 
         public void Draw()
         {
-            foreach (var mesh in _model.Meshes)
-            {
-                _effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
-                mesh.Draw();
-            }
+            Draw(World);
         }
     }
 }
