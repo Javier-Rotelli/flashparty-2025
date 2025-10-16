@@ -71,7 +71,7 @@ public class TGCGame : Game
 
 
         _freeCamera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, Vector3.UnitZ * -150);
-        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0f, 75f, -100f), new Vector3(0f, -0.05f, 1f), Vector3.Up);
+        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0f, 50f, -100f), new Vector3(0f, -0.05f, 1f), Vector3.Up);
         base.Initialize();
     }
 
@@ -150,9 +150,9 @@ public class TGCGame : Game
 
         //UpdateModelPosition(gameTime);
         _freeCamera.Update(gameTime);
-
-        _rail_straight.Update(gameTime, 2000f);
-        _quad.Update(gameTime, 2000f);
+        var speed = 1000f;
+        _rail_straight.Update(gameTime, speed);
+        _quad.Update(gameTime, speed);
 
         base.Update(gameTime);
         _previousKeyboardState = state;

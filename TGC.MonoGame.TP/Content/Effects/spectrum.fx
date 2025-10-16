@@ -12,9 +12,6 @@
 
 float TAU = 6.283185; 
 float PI = 3.141592;
-float bars = 16.;
-float3 barColorA = float3(0.98,0.96,0.);
-float3 barColorB = float3(0.1,0.2,0.9);
 
 float4x4 World;
 float4x4 View;
@@ -55,8 +52,8 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	return output;
 }
 
-static float minValue = 0.2;
-static float maxValue = 0.8;
+static float minValue = 0.1;
+static float maxValue = 0.9;
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float2 uv = input.TexCoord * 2 - 1;
@@ -64,19 +61,28 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     float l = length(uv);
     if(l < minValue || l > maxValue)
         discard;
-
-    float opacity = smoothstep(minValue,0.4,l) - smoothstep(0.5,maxValue,l);
     
-    float ring = floor(coords.y * 10);
 	
-    float noise = snoise(float3(uv + i,Time));
+	float opacity = smoothstep(minValue,0.4,l) - smoothstep(0.5,maxValue,l);
+    float ring = floor(coords.y * 10);
+	coords.y = frac(coords.y * 10);
+	coords.y += cos(Time + ring * TAU);
+
+	coords.x = frac(coords.x * 16.);
+	
+	
+	float oct = 1/mod(Time,4);
+
+    float noise = pow(snoise(float3(uv + i,Time)),i);
 	
 	float noise2 = snoise(float3(uv * 3.0,Time * 0.5 - i));
 
-	float noise3 = snoise(float3(uv * cos(Time),ring));
+	float noise3 = snoise(float3(uv,noise2));
 
-	float3 albedo = float3(1.,0.,1.) * noise + float3(0.,1.,1.) * noise2;// + float3(1.,1.,0.) * noise3;
-	albedo = saturate(albedo);
+	
+	step(mod(i,32),16);
+	
+	float3 albedo = float3(1.,0.,1.) * noise+ float3(0.,1.,1.) * noise2 + step(4,mod(i,16)) * float3(1.,1.,0.) * noise3;
     return float4(albedo,opacity);
 }
 
