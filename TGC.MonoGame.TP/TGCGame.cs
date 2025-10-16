@@ -100,8 +100,8 @@ public class TGCGame : Game
         _effect.Parameters["Colormap"]?.SetValue(colormap);
 
         // Luz
-        _effect.Parameters["ambientColor"]?.SetValue(Vector3.One);
-        _effect.Parameters["diffuseColor"]?.SetValue(new Vector3(0.1f, 0.1f, 0.6f));
+        _effect.Parameters["ambientColor"]?.SetValue(Color.Cyan.ToVector3());
+        _effect.Parameters["diffuseColor"]?.SetValue(Color.Cyan.ToVector3());
         _effect.Parameters["specularColor"]?.SetValue(new Vector3(1f, 0f, 1f));
 
         _effect.Parameters["KAmbient"]?.SetValue(0.5f);
@@ -151,8 +151,8 @@ public class TGCGame : Game
         //UpdateModelPosition(gameTime);
         _freeCamera.Update(gameTime);
 
-        _rail_straight.Update(gameTime, 1000f);
-        //_quad.Update(gameTime, 1000f);
+        _rail_straight.Update(gameTime, 2000f);
+        _quad.Update(gameTime, 2000f);
 
         base.Update(gameTime);
         _previousKeyboardState = state;
