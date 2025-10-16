@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 using TGC.MonoGame.Samples.Cameras;
 using TGC.MonoGame.Samples.Geometries;
 using TGC.MonoGame.TP.Models;
@@ -17,10 +18,6 @@ public class TGCGame : Game
 {
     public const string ContentFolder3D = "Models/kenney/";
     public const string ContentFolderEffects = "Effects/";
-    public const string ContentFolderMusic = "Music/";
-    public const string ContentFolderSounds = "Sounds/";
-    public const string ContentFolderSpriteFonts = "SpriteFonts/";
-    public const string ContentFolderTextures = "Textures/";
 
     private readonly GraphicsDeviceManager _graphics;
 
@@ -31,6 +28,7 @@ public class TGCGame : Game
 
     // posprocesados
     private FullScreenQuad _fullscreenQuad;
+    private Song _song;
     private RenderTarget2D _mainSceneRenderTarget;
     private Effect _postProcessEffect;
 
@@ -124,6 +122,9 @@ public class TGCGame : Game
                 RenderTargetUsage.DiscardContents);
         _fullscreenQuad = new FullScreenQuad(GraphicsDevice);
 
+        // musica
+        _song = Content.Load<Song>("EggyToast-Drift");
+        MediaPlayer.Play(_song);
         base.LoadContent();
     }
 

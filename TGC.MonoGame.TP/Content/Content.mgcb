@@ -33,7 +33,7 @@
 
 #begin EggyToast-Drift.mp3
 /importer:Mp3Importer
-/processor:SoundEffectProcessor
+/processor:SongProcessor
 /processorParam:Quality=Best
 /build:EggyToast-Drift.mp3
 
@@ -105,10 +105,4 @@
 /processorParam:SwapWindingOrder=False
 /processorParam:TextureFormat=Compressed
 /build:Models/tgc-logo/tgc-logo.fbx
-
-#begin Onys-Tension.mp3
-/importer:Mp3Importer
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Onys-Tension.mp3
 
