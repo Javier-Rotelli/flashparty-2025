@@ -115,9 +115,8 @@ namespace TGC.MonoGame.TP
         {
             _graphicsDevice.SetVertexBuffer(_vertexBuffer);
             _graphicsDevice.Indices = _indexBuffer;
-            effect.CurrentTechnique = effect.Techniques["Plane"];
             effect.Parameters["World"].SetValue(Matrix.Identity);
-            effect.Parameters["InverseTransposeWorld"].SetValue(Matrix.Transpose(Matrix.Invert(Matrix.Identity)));
+            effect.Parameters["InverseTransposeWorld"]?.SetValue(Matrix.Transpose(Matrix.Invert(Matrix.Identity)));
 
             foreach (var pass in effect.CurrentTechnique.Passes)
             {

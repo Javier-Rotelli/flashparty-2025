@@ -100,47 +100,9 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 	return finalColor;
 }
 
-
-VertexShaderOutput PlaneVS(in VertexShaderInput input)
-{
-	// Clear the output
-	VertexShaderOutput output = (VertexShaderOutput)0;
-
-	input.Position.y = cos(input.Position.x * 0.1) + sin(input.Position.z * 0.5 + Time) * 6;
-	float3 tanget = float3(1, -0.1 * sin(input.Position.x * 0.1), 0);
-	float3 bitanget = float3(0, 0.5 * cos(input.Position.z * 0.5 + Time), 1);
-	input.Normal = normalize(float4((tanget, bitanget), 0));
-	// Model space to World space
-	output.WorldPosition = mul(input.Position, World);
-	// World space to View space
-	float4 viewPosition = mul(output.WorldPosition, View);
-	// View space to Projection space
-	output.Position = mul(viewPosition, Projection);
-
-	output.Normal = mul(input.Normal, InverseTransposeWorld);
-	output.TexCoord = input.TexCoord;
-
-	return output;
-}
-
-float4 PlanePS(VertexShaderOutput input) : COLOR
-{
-	// float3 normal = cross(ddx(input.WorldPosition.xyz), ddy(input.WorldPosition.xyz));
-	// normal = normalize(normal);
-	float4 finalColor = getLight(input.WorldPosition, input.Normal.xyz, float4(DiffuseColor, 1));
-	return finalColor;
-}
-
 technique BlinnPhong{
 	pass P0{
 		VertexShader = compile VS_SHADERMODEL MainVS();
 PixelShader = compile PS_SHADERMODEL MainPS();
 }
-};
-
-technique Plane {
-	pass P0{
-		VertexShader = compile VS_SHADERMODEL PlaneVS();
-		PixelShader = compile PS_SHADERMODEL PlanePS();
-	}
 };

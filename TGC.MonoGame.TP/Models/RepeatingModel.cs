@@ -25,7 +25,7 @@ namespace TGC.MonoGame.TP.Models
         ];
 
         private readonly float _lenght = 400;
-        private readonly int _repetitions = 10;
+        private readonly int _repetitions = 25;
         public Rails(Effect effect) : base(effect)
         {
         }

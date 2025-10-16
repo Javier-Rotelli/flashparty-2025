@@ -25,17 +25,15 @@ public class TGCGame : Game
     private readonly GraphicsDeviceManager _graphics;
 
     private Effect _effect;
-    private SimpleModel _cart;
+    private Effect _spectrum_effect;
     private Rails _rail_straight;
-    private Plane _plane;
+    private Quad _quad;
     private bool _isFreeCamera = false;
 
-    private Camera _freeCamera;
-    private Camera _fixedCamera;
+    private FreeCamera _freeCamera;
+    private StaticCamera _fixedCamera;
 
     private Origin _origin;
-
-    private Vector3 _cart_offset = new Vector3(0, 30, 110);
 
     /// <summary>
     ///     Constructor del juego.
@@ -72,8 +70,8 @@ public class TGCGame : Game
         // Seria hasta aca.
 
 
-        _freeCamera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, Vector3.UnitZ * 150);
-        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0f, 125f, -100f), new Vector3(0f, -0.05f, 1f), Vector3.Up);
+        _freeCamera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, Vector3.UnitZ * -150);
+        _fixedCamera = new StaticCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0f, 75f, -100f), new Vector3(0f, -0.05f, 1f), Vector3.Up);
         base.Initialize();
     }
 
@@ -92,13 +90,11 @@ public class TGCGame : Game
         // En el juego no pueden usar BasicEffect de MG, deben usar siempre efectos propios.
         _effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
 
-        _cart = new SimpleModel(Content, ContentFolder3D + "coaster-train-front", _effect);
-        _cart.Scale = new Vector3(1, 1, -1);
-        _cart.Position = _cart_offset;
+        _spectrum_effect = Content.Load<Effect>(ContentFolderEffects + "spectrum");
 
         _rail_straight = new Rails(Content, ContentFolder3D + "coaster-steel-straight", _effect);
 
-        _plane = new Plane(GraphicsDevice, 200, 200, 30);
+        _quad = new Quad(GraphicsDevice, 750, 750);
 
         // Asigno la textura cargada al efecto.
         _effect.Parameters["Colormap"]?.SetValue(colormap);
@@ -106,13 +102,12 @@ public class TGCGame : Game
         // Luz
         _effect.Parameters["ambientColor"]?.SetValue(Vector3.One);
         _effect.Parameters["diffuseColor"]?.SetValue(new Vector3(0.1f, 0.1f, 0.6f));
-        _effect.Parameters["specularColor"]?.SetValue(new Vector3(1f, 1f, 1f));
+        _effect.Parameters["specularColor"]?.SetValue(new Vector3(1f, 0f, 1f));
 
-        _effect.Parameters["KAmbient"]?.SetValue(0.1f);
+        _effect.Parameters["KAmbient"]?.SetValue(0.5f);
         _effect.Parameters["KDiffuse"]?.SetValue(1.0f);
         _effect.Parameters["KSpecular"]?.SetValue(0.8f);
-        _effect.Parameters["shininess"]?.SetValue(64.0f);
-
+        _effect.Parameters["shininess"]?.SetValue(32.0f);
 
         base.LoadContent();
     }
@@ -125,47 +120,6 @@ public class TGCGame : Game
         return !Keyboard.GetState().IsKeyDown(key) && _previousKeyboardState.IsKeyDown(key);
     }
 
-
-    protected void UpdateModelPosition(GameTime gameTime)
-    {
-        if (OnKeyUp(Keys.W))
-        {
-            _cart_offset.Z += 10;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.S))
-        {
-            _cart_offset.Z -= 10;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.A))
-        {
-            _cart_offset.X -= 1;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.D))
-        {
-            _cart_offset.X += 1;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.R))
-        {
-            _cart_offset = new Vector3(0, 30, 110);
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.F))
-        {
-            _cart_offset.Y += 1;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        if (OnKeyUp(Keys.V))
-        {
-            _cart_offset.Y -= 1;
-            System.Console.WriteLine("Offset: " + _cart_offset);
-        }
-        _cart.Position = _cart_offset;
-        _cart.Update(gameTime);
-    }
     /// <summary>
     ///     Se llama en cada frame.
     ///     Se debe escribir toda la logica de computo del modelo, asi como tambien verificar entradas del usuario y reacciones
@@ -185,13 +139,20 @@ public class TGCGame : Game
         {
             _isFreeCamera = !_isFreeCamera;
         }
+        if (OnKeyUp(Keys.O))
+        {
+            GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None, FillMode = FillMode.WireFrame };
+        }
+        else if (OnKeyUp(Keys.I))
+        {
+            GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None, FillMode = FillMode.Solid };
+        }
 
         //UpdateModelPosition(gameTime);
         _freeCamera.Update(gameTime);
 
         _rail_straight.Update(gameTime, 1000f);
-
-        _cart.Update(gameTime);
+        //_quad.Update(gameTime, 1000f);
 
         base.Update(gameTime);
         _previousKeyboardState = state;
@@ -205,22 +166,28 @@ public class TGCGame : Game
     {
         // Aca deberiamos poner toda la logia de renderizado del juego.
         GraphicsDevice.Clear(Color.Black);
-        var camera = _isFreeCamera ? _freeCamera : _fixedCamera;
+        Camera camera = _isFreeCamera ? _freeCamera : _fixedCamera;
 
         _origin.Draw(camera.View, camera.Projection);
         // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
         _effect.Parameters["View"].SetValue(camera.View);
         _effect.Parameters["Projection"].SetValue(camera.Projection);
 
-        _effect.Parameters["lightPosition"]?.SetValue(new Vector3(467, 1000, 883));
+        _spectrum_effect.Parameters["View"].SetValue(camera.View);
+        _spectrum_effect.Parameters["Projection"].SetValue(camera.Projection);
+
+
+
+        _effect.Parameters["lightPosition"]?.SetValue(new Vector3(0, 500, 1000));
         _effect.Parameters["eyePosition"]?.SetValue(camera.Position);
         _effect.Parameters["Time"]?.SetValue((float)gameTime.TotalGameTime.TotalSeconds);
 
-        _cart.Draw();
+        _spectrum_effect.Parameters["Time"]?.SetValue((float)gameTime.TotalGameTime.TotalSeconds);
 
         _rail_straight.Draw();
 
-        _plane.Draw(_effect);
+        _quad.Draw(_spectrum_effect, gameTime);
+
     }
 
     /// <summary>
