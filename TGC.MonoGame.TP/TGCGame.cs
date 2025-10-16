@@ -28,6 +28,13 @@ public class TGCGame : Game
     private Effect _spectrum_effect;
     private Rails _rail_straight;
     private Quad _quad;
+
+    // posprocesados
+    private FullScreenQuad _fullscreenQuad;
+    private RenderTarget2D _mainSceneRenderTarget;
+    private Effect _postProcessEffect;
+
+    // camaras
     private bool _isFreeCamera = false;
 
     private FreeCamera _freeCamera;
@@ -109,6 +116,14 @@ public class TGCGame : Game
         _effect.Parameters["KSpecular"]?.SetValue(0.8f);
         _effect.Parameters["shininess"]?.SetValue(32.0f);
 
+        // Postprocesado
+        _postProcessEffect = Content.Load<Effect>(ContentFolderEffects + "PostProcesado");
+        _postProcessEffect.Parameters["aberrationAmount"]?.SetValue(0.005f);
+        _mainSceneRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 0,
+                RenderTargetUsage.DiscardContents);
+        _fullscreenQuad = new FullScreenQuad(GraphicsDevice);
+
         base.LoadContent();
     }
 
@@ -158,11 +173,7 @@ public class TGCGame : Game
         _previousKeyboardState = state;
     }
 
-    /// <summary>
-    ///     Se llama cada vez que hay que refrescar la pantalla.
-    ///     Escribir aqui el codigo referido al renderizado.
-    /// </summary>
-    protected override void Draw(GameTime gameTime)
+    private void DirectDraw(GameTime gameTime)
     {
         // Aca deberiamos poner toda la logia de renderizado del juego.
         GraphicsDevice.Clear(Color.Black);
@@ -187,7 +198,42 @@ public class TGCGame : Game
         _rail_straight.Draw();
 
         _quad.Draw(_spectrum_effect, gameTime);
+    }
 
+    /// <summary>
+    ///     Se llama cada vez que hay que refrescar la pantalla.
+    ///     Escribir aqui el codigo referido al renderizado.
+    /// </summary>
+    protected override void Draw(GameTime gameTime)
+    {
+
+        // Use the default blend and depth configuration
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+        GraphicsDevice.BlendState = BlendState.Opaque;
+
+        // Set the main render target, here we'll draw the base scene
+        GraphicsDevice.SetRenderTarget(_mainSceneRenderTarget);
+        GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+        DirectDraw(gameTime);
+
+
+        // Set the depth configuration as none, as we don't use depth in this pass
+        GraphicsDevice.DepthStencilState = DepthStencilState.None;
+
+        GraphicsDevice.SetRenderTarget(null);
+        GraphicsDevice.Clear(Color.Black);
+
+        var aberrationAmount = 0.005f * (float)Math.Sin(gameTime.TotalGameTime.TotalSeconds);
+        _postProcessEffect.Parameters["aberrationAmount"]?.SetValue(aberrationAmount);
+
+        _postProcessEffect.CurrentTechnique = _postProcessEffect.Techniques["Integrate"];
+        _postProcessEffect.Parameters["baseTexture"].SetValue(_mainSceneRenderTarget);
+        _fullscreenQuad.Draw(_postProcessEffect);
+
+
+
+        base.Draw(gameTime);
     }
 
     /// <summary>
