@@ -15,7 +15,7 @@ namespace TGC.MonoGame.Samples.Cameras
         private float _pitch;
 
         // Angles
-        private float _yaw = -90f;
+        private float _yaw = 90f;
 
         public FreeCamera(float aspectRatio, Vector3 position, Point screenCenter) : this(aspectRatio, position)
         {
@@ -42,7 +42,7 @@ namespace TGC.MonoGame.Samples.Cameras
         /// <inheritdoc />
         public override void Update(GameTime gameTime)
         {
-            var elapsedTime = (float) gameTime.ElapsedGameTime.TotalSeconds;
+            var elapsedTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             _changed = false;
             ProcessKeyboard(elapsedTime);
             ProcessMouseMovement(elapsedTime);
