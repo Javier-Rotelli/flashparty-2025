@@ -50,6 +50,7 @@ public class TGCGame : Game
 
         _graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 100;
         _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 100;
+        _graphics.IsFullScreen = true;
 
         // Para que el juego sea pantalla completa se puede usar Graphics IsFullScreen.
         // Carpeta raiz donde va a estar toda la Media.
@@ -146,7 +147,7 @@ public class TGCGame : Game
         // Aca deberiamos poner toda la logica de actualizacion del juego.
         KeyboardState state = Keyboard.GetState();
         // Capturar Input teclado
-        if (state.IsKeyDown(Keys.Escape))
+        if (state.IsKeyDown(Keys.Escape) || gameTime.TotalGameTime.TotalSeconds > 51)
         {
             //Salgo del juego.
             Exit();
